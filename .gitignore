@@ -1,3 +1,4 @@
 *.env
 *.pyc
 .venv
+/chroma_langchain_db
