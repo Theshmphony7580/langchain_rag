@@ -1,10 +1,13 @@
+import argparse
 import uuid
 
 from deepagents.backends import StateBackend
 from langchain.tools import tool
-from split_doc.langchain_split import vector_store
+from split_doc.langchain_split import get_vector_store
 
 backend = StateBackend()
+
+vector_store = get_vector_store()
 
 
 @tool(parse_docstring=True)
@@ -84,15 +87,51 @@ from langchain.messages import HumanMessage
 
 EXAMPLE_QUERY = "How do I stream intermediate tool results from a subagent?"
 
-if __name__ == "__main__":
+
+def run_query(query: str) -> None:
     try:
         result = agent.invoke(
-            {"messages": [HumanMessage(content=EXAMPLE_QUERY)]}
+            {"messages": [HumanMessage(content=query)]}
         )
     except Exception as exc:
         print(f"Agent invocation failed: {type(exc).__name__}: {exc}")
-        raise SystemExit(1)
+        return
 
     for msg in result.get("messages", []):
         if msg.text:
             print(msg.text)
+
+
+def run_interactive() -> None:
+    print("Interactive agent started. Type a question and press Enter. Type 'exit' or 'quit' to stop.")
+    while True:
+        try:
+            query = input("> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting.")
+            return
+
+        if not query:
+            continue
+        if query.lower() in {"exit", "quit"}:
+            print("Exiting.")
+            return
+
+        run_query(query)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run the LangChain RAG agent.")
+    parser.add_argument("--query", "-q", help="Run a single query and exit.")
+    parser.add_argument(
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Run the agent in interactive mode.",
+    )
+    args = parser.parse_args()
+
+    if args.query:
+        run_query(args.query)
+    else:
+        run_interactive()

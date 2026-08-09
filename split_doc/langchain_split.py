@@ -7,8 +7,10 @@ from embeddings.langchain_embed import embeddings
 PERSIST_DIR = "./chroma_langchain_db"
 COLLECTION = "example_collection"
 
-vector_store = Chroma(
-    collection_name=COLLECTION,
-    embedding_function=embeddings,
-    persist_directory=PERSIST_DIR,
-)
+
+def get_vector_store() -> Chroma:
+    return Chroma(
+        collection_name=COLLECTION,
+        embedding_function=embeddings,
+        persist_directory=PERSIST_DIR,
+    )
