@@ -1,3 +1,4 @@
+from functools import lru_cache
 from langchain_chroma import Chroma
 
 from embeddings.langchain_embed import embeddings
@@ -8,6 +9,7 @@ PERSIST_DIR = "./chroma_langchain_db"
 COLLECTION = "example_collection"
 
 
+@lru_cache(maxsize=1)
 def get_vector_store() -> Chroma:
     return Chroma(
         collection_name=COLLECTION,

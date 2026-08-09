@@ -1,5 +1,6 @@
 import argparse
 import uuid
+from functools import lru_cache
 
 from deepagents.backends import StateBackend
 from langchain.tools import tool
@@ -7,7 +8,10 @@ from split_doc.langchain_split import get_vector_store
 
 backend = StateBackend()
 
-vector_store = get_vector_store()
+
+@lru_cache(maxsize=1)
+def _get_vector_store():
+    return get_vector_store()
 
 
 @tool(parse_docstring=True)
@@ -20,6 +24,7 @@ def search_documentation(query: str) -> str:
     Returns:
         File paths where retrieved chunks were saved under /retrieved/.
     """
+    vector_store = _get_vector_store()
     retrieved_docs = vector_store.similarity_search(query, k=4)
     batch_id = uuid.uuid4().hex[:8]
     uploads: list[tuple[str, bytes]] = []
@@ -89,13 +94,9 @@ EXAMPLE_QUERY = "How do I stream intermediate tool results from a subagent?"
 
 
 def run_query(query: str) -> None:
-    try:
-        result = agent.invoke(
-            {"messages": [HumanMessage(content=query)]}
-        )
-    except Exception as exc:
-        print(f"Agent invocation failed: {type(exc).__name__}: {exc}")
-        return
+    result = agent.invoke(
+        {"messages": [HumanMessage(content=query)]}
+    )
 
     for msg in result.get("messages", []):
         if msg.text:
