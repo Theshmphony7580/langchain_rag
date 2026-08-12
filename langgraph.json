@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "langchain_rag": "./studio_graph.py:compile_agent"
+  },
+  "env": ".env",
+  "python_version": "3.12"
+}
