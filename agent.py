@@ -1,3 +1,5 @@
+from observability.logfire_config import logfire  # noqa: F401
+
 import argparse
 import uuid
 from functools import lru_cache

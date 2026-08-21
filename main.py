@@ -1,3 +1,5 @@
+from observability.logfire_config import logfire  # noqa: F401
+
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
