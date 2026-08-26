@@ -22,4 +22,8 @@ dependencies = [
     "opentelemetry-semantic-conventions>=0.65b0",
     "requests>=2.34.2",
     "sentence-transformers>=5.7.0",
+    "rank-bm25>=0.2.2",
+    "flashrank>=0.2.9",
+    "langchain-groq>=0.2.0",
+    "langchain-google-genai>=2.0.0",
 ]

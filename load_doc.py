@@ -6,17 +6,23 @@ def load_langchain_docs(doc_paths: list[str] | None = None) -> list[Document]:
     """Fetch LangChain documentation pages as Documents."""
     paths = doc_paths or DOC_PATHS
     docs: list[Document] = []
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
+    print(f"Fetching {len(paths)} documentation pages from {DOCS_BASE}...")
     for path in paths:
         url = f"{DOCS_BASE}/{path}.md"
         try:
-            response = requests.get(url, timeout=20)
+            response = requests.get(url, headers=headers, timeout=20)
             response.raise_for_status()
-        except requests.RequestException:
+            source = f"{DOCS_BASE}/{path}"
+            docs.append(
+                Document(page_content=response.text, metadata={"source": source})
+            )
+            print(f"  [OK] {path} ({len(response.text)} chars)")
+        except requests.RequestException as e:
+            print(f"  [FAIL] {url} -> {e}")
             continue
-        source = f"{DOCS_BASE}/{path}"
-        docs.append(
-            Document(page_content=response.text, metadata={"source": source})
-        )
+    print(f"Successfully loaded {len(docs)} / {len(paths)} documents.")
     return docs
 
 

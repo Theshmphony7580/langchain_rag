@@ -1,3 +1,8 @@
+import os
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 from observability.logfire_config import logfire  # noqa: F401
 
 import argparse
@@ -6,19 +11,14 @@ from functools import lru_cache
 
 from deepagents.backends import StateBackend
 from langchain.tools import tool
-from split_doc.langchain_split import get_vector_store
+from retrieval.hybrid import get_hybrid_retriever
 
 backend = StateBackend()
 
 
-@lru_cache(maxsize=1)
-def _get_vector_store():
-    return get_vector_store()
-
-
 @tool(parse_docstring=True)
 def search_documentation(query: str) -> str:
-    """Search LangChain documentation and save matching chunks to the agent filesystem.
+    """Search LangChain documentation using hybrid dense/sparse search with neural reranking.
 
     Args:
         query: Natural language search query.
@@ -26,16 +26,21 @@ def search_documentation(query: str) -> str:
     Returns:
         File paths where retrieved chunks were saved under /retrieved/.
     """
-    vector_store = _get_vector_store()
-    retrieved_docs = vector_store.similarity_search(query, k=4)
+    retriever = get_hybrid_retriever()
+    retrieved_docs = retriever.search(query, k_dense=10, k_sparse=10, k_final=5)
     batch_id = uuid.uuid4().hex[:8]
     uploads: list[tuple[str, bytes]] = []
     saved_paths: list[str] = []
 
     for index, doc in enumerate(retrieved_docs, start=1):
         path = f"/retrieved/{batch_id}/chunk_{index}.md"
+        rerank_info = (
+            f" (Rerank Score: {doc.metadata.get('rerank_score', 0):.4f})"
+            if "rerank_score" in doc.metadata
+            else ""
+        )
         content = (
-            f"# Source: {doc.metadata.get('source', 'unknown')}\n\n"
+            f"# Source: {doc.metadata.get('source', 'unknown')}{rerank_info}\n\n"
             f"{doc.page_content}"
         )
         uploads.append((path, content.encode("utf-8")))
@@ -80,7 +85,7 @@ chunk_analyst_subagent = {
     "system_prompt": CHUNK_ANALYST_INSTRUCTIONS,
 }
 
-model = init_chat_model(model="openrouter:openrouter/free")
+model = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai")
 
 agent = create_deep_agent(
     model=model,
@@ -99,10 +104,12 @@ def run_query(query: str) -> None:
     result = agent.invoke(
         {"messages": [HumanMessage(content=query)]}
     )
-
-    for msg in result.get("messages", []):
-        if msg.text:
-            print(msg.text)
+    messages = result.get("messages", [])
+    if messages:
+        last_msg = messages[-1]
+        content = getattr(last_msg, "text", None) or getattr(last_msg, "content", "")
+        if content:
+            print(content)
 
 
 def run_interactive() -> None:
