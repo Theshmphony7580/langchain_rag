@@ -1,6 +1,9 @@
-from langchain_huggingface import HuggingFaceEmbeddings
+import os
+from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2",
-    encode_kwargs={"normalize_embeddings": True},
+load_dotenv()
+
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/gemini-embedding-001",
 )

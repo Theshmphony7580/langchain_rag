@@ -27,7 +27,7 @@ def search_documentation(query: str) -> str:
         File paths where retrieved chunks were saved under /retrieved/.
     """
     retriever = get_hybrid_retriever()
-    retrieved_docs = retriever.search(query, k_dense=10, k_sparse=10, k_final=5)
+    retrieved_docs = retriever.search(query, k_dense=10, k_sparse=10, k_final=2)
     batch_id = uuid.uuid4().hex[:8]
     uploads: list[tuple[str, bytes]] = []
     saved_paths: list[str] = []
@@ -60,7 +60,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
-max_concurrent_analysts = 3
+max_concurrent_analysts = 2
 
 RAG_WORKFLOW_INSTRUCTIONS = (Path("prompts") / "RAG_WORKFLOW.md").read_text(encoding="utf-8")
 SUBAGENT_DELEGATION_INSTRUCTIONS = (Path("prompts") / "SUBAGENT.md").read_text(encoding="utf-8")
@@ -85,7 +85,7 @@ chunk_analyst_subagent = {
     "system_prompt": CHUNK_ANALYST_INSTRUCTIONS,
 }
 
-model = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai")
+model = init_chat_model(model="gemini-3.6-flash", model_provider="google_genai")
 
 agent = create_deep_agent(
     model=model,
